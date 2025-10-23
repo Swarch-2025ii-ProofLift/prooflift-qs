@@ -212,6 +212,8 @@ services:
       - "15672:15672"
     networks:
       - prooflift_network
+    volumes:
+      - notifications_mq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s
@@ -255,6 +257,7 @@ volumes:
   posts_data:
   suggest_data:
   notifications_data:
+  notifications_mq_data:
 
 networks:
   prooflift_network:
