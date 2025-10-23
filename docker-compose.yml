@@ -1,0 +1,261 @@
+name: prooflift
+
+services:
+
+  # === Frontend ===
+  prooflift-fe:
+    build:
+      context: ./prooflift-fe-ssr
+      args:
+        - NEXT_PUBLIC_URL=http://localhost:3000
+        - NEXT_PUBLIC_AUTH_API_URL=http://localhost:8000/auth
+        - NEXT_PUBLIC_SUGGEST_API_URL=http://localhost:8000/suggest
+        - NEXT_PUBLIC_GRAPHQL_API_URL=http://localhost:8000/posts/graphql
+        - NEXT_PUBLIC_NOTIFICATIONS_API_URL=http://localhost:8000/notifications
+    container_name: prooflift-fe
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+    - NEXT_PUBLIC_URL=http://localhost:3000
+    - NEXT_PUBLIC_AUTH_API_URL=http://localhost:8000/auth
+    - NEXT_PUBLIC_SUGGEST_API_URL=http://localhost:8000/suggest
+    - NEXT_PUBLIC_GRAPHQL_API_URL=http://localhost:8000/posts/graphql
+    - NEXT_PUBLIC_NOTIFICATIONS_API_URL=http://localhost:8000/notifications
+    - AUTH_API_URL=http://prooflift-api-gateway:8000/auth
+    - GRAPHQL_API_URL=http://prooflift-api-gateway:8000/posts/graphql
+    - EXERCISES_API_URL=http://prooflift-api-gateway:8000/suggest
+    - NOTIFICATIONS_API_URL=http://prooflift-api-gateway:8000/notifications
+    - NODE_ENV=development
+    depends_on:
+      - prooflift-api-gateway
+    networks:
+      - prooflift_network
+    
+  # === Backend Services ===
+  prooflift-auth-be:
+    build:
+      context: ./prooflift-auth-be
+      dockerfile: Dockerfile
+    container_name: prooflift-auth_be
+    environment:
+      DB_URL: jdbc:postgresql://prooflift-auth-db:5432/auth_login_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: password123
+    expose:
+      - "8080"
+    depends_on:
+      prooflift-auth-db:
+        condition: service_healthy
+    networks:
+      - prooflift_network
+
+  prooflift-suggest-be:
+    build: ./prooflift-suggest-be
+    container_name: prooflift-suggest-be
+    expose:
+      - "8081"
+    environment:
+      - MONGO_URI=mongodb://prooflift-suggest-db:27017
+      - MONGO_DB=prooflift-suggest-db
+      - FE_ORIGIN=http://localhost:3000
+      - PORT=8081
+    depends_on:
+      prooflift-suggest-db:
+        condition: service_started
+    networks:
+      - prooflift_network
+    restart: unless-stopped
+
+  prooflift-posts-be:
+    build:
+      context: ./prooflift-posts-be
+      dockerfile: app/Dockerfile
+    container_name: prooflift-posts-be
+    expose:
+      - "8082"
+    environment:
+      - DB_HOST=prooflift-posts-db
+      - DB_USER=postgres
+      - DB_PASSWORD=root
+      - DB_NAME=posts_db
+      - JWT_SECRET_KEY=MiClaveSuperSeguraDeMasDeTreintaYDosCaracteres123
+      - JWT_ALGORITHM=HS256
+      - MQ_HOST=prooflift-notifications-mq
+      - MQ_PORT=5672
+      - MQ_USER=${MQ_USER:-guest}
+      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+      - MQ_QUEUE=notifications_queue
+      - PORT=8082
+    depends_on:
+      prooflift-posts-db:
+        condition: service_healthy
+      prooflift-notifications-mq:
+        condition: service_healthy
+    networks:
+      - prooflift_network
+    restart: unless-stopped
+
+  prooflift-notifications-be:
+    build: ./prooflift-notifications-be
+    container_name: prooflift-notifications-be
+    environment:
+      - DB_USER=${DB_USER_NOTIFICATIONS:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD_NOTIFICATIONS:-root}
+      - DB_HOST=prooflift-notifications-db
+      - DB_NAME=notifications_db
+      - DB_PORT=5432
+      - DB_SSLMODE=disable
+      - MQ_USER=${MQ_USER:-guest}
+      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+      - MQ_HOST=prooflift-notifications-mq
+      - MQ_PORT=5672
+      - SERVICE_NAME=prooflift-notifications-be
+      - QUEUE_NAME=notifications_queue
+      - HTTP_PORT=8083
+      - HTTP_HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET:-MiClaveSuperSeguraDeMasDeTreintaYDosCaracteres123}
+    expose:
+      - "8083"
+    depends_on:
+      prooflift-notifications-db:
+        condition: service_healthy
+      prooflift-notifications-mq:
+        condition: service_healthy
+    networks:
+      - prooflift_network
+    restart: unless-stopped
+
+  # === Databases ===
+  prooflift-auth-db:
+    image: postgres:15-alpine
+    container_name: prooflift-auth-db
+    environment:
+      POSTGRES_DB: auth_login_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - prooflift_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  prooflift-suggest-db:
+    image: mongo:6.0
+    container_name: prooflift-suggest-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - suggest_data:/data/db
+    networks:
+      - prooflift_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prooflift-posts-db:
+    image: postgres:15-alpine
+    container_name: prooflift-posts-db
+    environment:
+      POSTGRES_DB: posts_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5433:5432"
+    volumes:
+      - posts_data:/var/lib/postgresql/data
+    networks:
+      - prooflift_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d posts_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  prooflift-notifications-db:
+    image: postgres:16-alpine
+    container_name: prooflift-notifications-db
+    environment:
+      POSTGRES_USER: ${DB_USER_NOTIFICATIONS:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_NOTIFICATIONS:-root}
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - notifications_data:/var/lib/postgresql/data
+    networks:
+      - prooflift_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_NOTIFICATIONS:-postgres} -d notifications_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === Message Queue ===
+  prooflift-notifications-mq:
+    image: rabbitmq:3-management-alpine
+    container_name: prooflift-notifications-mq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${MQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${MQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - prooflift_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === API Gateway ===
+  prooflift-api-gateway:
+    image: kong:3.9.1
+    container_name: prooflift-api-gateway
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    volumes:
+      - ./kong.yml:/kong/declarative/kong.yml:ro
+    networks:
+      - prooflift_network
+    depends_on:
+      - prooflift-auth-be
+      - prooflift-suggest-be
+      - prooflift-posts-be
+      - prooflift-notifications-be
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  posts_data:
+  suggest_data:
+  notifications_data:
+
+networks:
+  prooflift_network:
+    driver: bridge

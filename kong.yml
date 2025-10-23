@@ -1,0 +1,92 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # === Auth Service ===
+  - name: auth-service
+    host: prooflift-auth-be
+    port: 8080
+    protocol: http
+    routes:
+      - name: auth-route
+        paths:
+          - /auth
+          - /auth/
+        strip_path: false
+        preserve_host: false
+
+      - name: auth-catch-all
+        paths:
+          - /auth/.*
+        strip_path: false
+        preserve_host: false
+        regex_priority: 10
+
+  # === Suggest/Exercises Service ===
+  - name: suggest-service
+    host: prooflift-suggest-be
+    port: 8081
+    protocol: http
+    routes:
+      - name: suggest-route
+        paths:
+          - /suggest
+          - /suggest/
+        strip_path: true
+        preserve_host: false
+
+      - name: suggest-catch-all
+        paths:
+          - /suggest/.*
+        strip_path: true
+        preserve_host: false
+        regex_priority: 10
+
+  # === Posts/GraphQL Service ===
+  - name: posts-service
+    host: prooflift-posts-be
+    port: 8082
+    protocol: http
+    routes:
+      - name: posts-route
+        paths:
+          - /posts
+          - /posts/
+        strip_path: true
+        preserve_host: false
+
+      - name: posts-catch-all
+        paths:
+          - /posts/.*
+        strip_path: true
+        preserve_host: false
+        regex_priority: 10
+
+  # === Notifications Service ===
+  - name: notifications-service
+    host: prooflift-notifications-be
+    port: 8083
+    protocol: http
+    routes:
+      - name: notifications-route
+        paths:
+          - /notifications
+          - /notifications/
+        strip_path: true
+        preserve_host: false
+
+      - name: notifications-catch-all
+        paths:
+          - /notifications/.*
+        strip_path: true
+        preserve_host: false
+        regex_priority: 10
+
+plugins:
+  - name: cors
+    config:
+      # origins: ["http://localhost:3000", "http://prooflift-fe:80"]
+      origins: ["*"]
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization", "X-Requested-With"]
+      credentials: true
