@@ -214,12 +214,12 @@ services:
       - prooflift_network
     volumes:
       - notifications_mq_data:/var/lib/rabbitmq
-  healthcheck:
-    test: ["CMD", "rabbitmq-diagnostics", "ping"]
-    interval: 10s
-    timeout: 5s
-    retries: 12
-    start_period: 30s
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   # === API Gateway ===
   prooflift-api-gateway:
