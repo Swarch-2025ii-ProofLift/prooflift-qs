@@ -36,4 +36,3 @@ for repo in "${REPOS[@]}"; do
 done
 
 echo "All repos cloned/cleaned successfully."
-echo "You can now use your generic docker-compose.yml and kong.yml files."

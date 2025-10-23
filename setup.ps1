@@ -38,4 +38,3 @@ foreach ($repo in $Repos) {
 }
 
 Write-Host "All repos cloned and cleaned successfully."
-Write-Host "You can now use your generic docker-compose.yml and kong.yml files."
