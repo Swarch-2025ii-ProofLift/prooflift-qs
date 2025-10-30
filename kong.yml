@@ -42,7 +42,7 @@ services:
         preserve_host: false
         regex_priority: 10
 
-  # === Posts/GraphQL Service ===
+  # === Posts Service ===
   - name: posts-service
     host: prooflift-posts-be
     port: 8082
@@ -85,7 +85,6 @@ services:
 plugins:
   - name: cors
     config:
-      # origins: ["http://localhost:3000", "http://prooflift-fe:80"]
       origins: ["*"]
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
       headers: ["Accept", "Content-Type", "Authorization", "X-Requested-With"]

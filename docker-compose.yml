@@ -37,7 +37,7 @@ services:
     build:
       context: ./prooflift-auth-be
       dockerfile: Dockerfile
-    container_name: prooflift-auth_be
+    container_name: prooflift-auth-be
     environment:
       DB_URL: jdbc:postgresql://prooflift-auth-db:5432/auth_login_db
       DB_USERNAME: postgres
