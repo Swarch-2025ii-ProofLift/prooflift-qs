@@ -33,6 +33,7 @@ for repo in "${REPOS[@]}"; do
 
   echo "Cleaning $REPO_NAME..."
   find "$ROOT_DIR/$REPO_NAME" -type f -name ".env*" -exec rm -f {} \;
+  find "$ROOT_DIR/$REPO_NAME" -type f -name "docker-compose.yml" -exec rm -f {} \;
 done
 
 echo "All repos cloned/cleaned successfully."
