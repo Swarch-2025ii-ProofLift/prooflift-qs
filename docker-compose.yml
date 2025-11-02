@@ -30,8 +30,41 @@ services:
     depends_on:
       - prooflift-api-gateway
     networks:
-      - prooflift_network
-    
+      - public
+      - private
+
+  # === API Gateway ===
+  prooflift-api-gateway:
+    image: kong:3.9.1
+    container_name: prooflift-api-gateway
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+    expose:
+      - "8000"
+      - "8001"
+    volumes:
+      - ./kong.yml:/kong/declarative/kong.yml:ro
+    depends_on:
+      - prooflift-auth-be
+      - prooflift-suggest-be
+      - prooflift-posts-be
+      - prooflift-notifications-be
+    networks:
+      - private
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # === Backend Services ===
   prooflift-auth-be:
     build:
@@ -48,7 +81,7 @@ services:
       prooflift-auth-db:
         condition: service_healthy
     networks:
-      - prooflift_network
+      - private
 
   prooflift-suggest-be:
     build: ./prooflift-suggest-be
@@ -64,7 +97,7 @@ services:
       prooflift-suggest-db:
         condition: service_started
     networks:
-      - prooflift_network
+      - private
     restart: unless-stopped
 
   prooflift-posts-be:
@@ -93,7 +126,7 @@ services:
       prooflift-notifications-mq:
         condition: service_healthy
     networks:
-      - prooflift_network
+      - private
     restart: unless-stopped
 
   prooflift-notifications-be:
@@ -123,7 +156,7 @@ services:
       prooflift-notifications-mq:
         condition: service_healthy
     networks:
-      - prooflift_network
+      - private
     restart: unless-stopped
 
   # === Databases ===
@@ -134,28 +167,24 @@ services:
       POSTGRES_DB: auth_login_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - prooflift_network
+      - private
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
       timeout: 10s
       retries: 5
-  
+
   prooflift-suggest-db:
     image: mongo:6.0
     container_name: prooflift-suggest-db
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - suggest_data:/data/db
     networks:
-      - prooflift_network
+      - private
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -169,12 +198,10 @@ services:
       POSTGRES_DB: posts_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
-    ports:
-      - "5433:5432"
     volumes:
       - posts_data:/var/lib/postgresql/data
     networks:
-      - prooflift_network
+      - private
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d posts_db"]
       interval: 30s
@@ -188,12 +215,10 @@ services:
       POSTGRES_USER: ${DB_USER_NOTIFICATIONS:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD_NOTIFICATIONS:-root}
       POSTGRES_DB: notifications_db
-    ports:
-      - "5434:5432"
     volumes:
       - notifications_data:/var/lib/postgresql/data
     networks:
-      - prooflift_network
+      - private
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER_NOTIFICATIONS:-postgres} -d notifications_db"]
       interval: 5s
@@ -207,11 +232,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${MQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${MQ_PASSWORD:-guest}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
-      - prooflift_network
+      - private
     volumes:
       - notifications_mq_data:/var/lib/rabbitmq
     healthcheck:
@@ -221,38 +243,7 @@ services:
       retries: 12
       start_period: 30s
 
-  # === API Gateway ===
-  prooflift-api-gateway:
-    image: kong:3.9.1
-    container_name: prooflift-api-gateway
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-      KONG_PROXY_LISTEN: "0.0.0.0:8000"
-    ports:
-      - "8000:8000"
-      - "8001:8001"
-    volumes:
-      - ./kong.yml:/kong/declarative/kong.yml:ro
-    networks:
-      - prooflift_network
-    depends_on:
-      - prooflift-auth-be
-      - prooflift-suggest-be
-      - prooflift-posts-be
-      - prooflift-notifications-be
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+# === Volumes ===
 volumes:
   postgres_data:
   posts_data:
@@ -260,6 +251,18 @@ volumes:
   notifications_data:
   notifications_mq_data:
 
+# === Network ===
 networks:
-  prooflift_network:
+  public:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 203.0.113.0/24
+
+  private:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.0.0/24

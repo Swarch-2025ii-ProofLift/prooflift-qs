@@ -18,5 +18,5 @@ chmod +x setup.sh
 ## What it does
 
 - Clones all ProofLift components from their respective branches
-- Removes `.env*` files from cloned repositories
+- Removes `.env*` and individual `docker-compose.yml*` files from cloned repositories
 - Prepares the environment for Docker Compose deployment
