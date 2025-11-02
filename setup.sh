@@ -9,11 +9,11 @@ ROOT_DIR=$(pwd)
 # Repos to clone (URL|branch)
 # ----------------------------
 REPOS=(
-  "https://github.com/Swarch-2025ii-ProofLift/prooflift-fe-ssr.git|develop",
-  "https://github.com/Swarch-2025ii-ProofLift/prooflift-auth-be.git|development",
-  "https://github.com/Swarch-2025ii-ProofLift/prooflift-posts-be.git|develop",
-  "https://github.com/Swarch-2025ii-ProofLift/prooflift-suggest-be.git|development",
-  "https://github.com/Swarch-2025ii-ProofLift/prooflift-mobile-fe.git|develop",
+  "https://github.com/Swarch-2025ii-ProofLift/prooflift-fe-ssr.git|develop"
+  "https://github.com/Swarch-2025ii-ProofLift/prooflift-auth-be.git|development"
+  "https://github.com/Swarch-2025ii-ProofLift/prooflift-posts-be.git|develop"
+  "https://github.com/Swarch-2025ii-ProofLift/prooflift-suggest-be.git|development"
+  "https://github.com/Swarch-2025ii-ProofLift/prooflift-mobile-fe.git|develop"
   "https://github.com/Swarch-2025ii-ProofLift/prooflift-notifications-be.git|develop"
 )
 
