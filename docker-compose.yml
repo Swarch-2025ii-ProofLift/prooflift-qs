@@ -15,9 +15,10 @@ services:
       - GRAPHQL_API_URL=http://prooflift-api-gateway:8000/posts/graphql
       - EXERCISES_API_URL=http://prooflift-api-gateway:8000/suggest
       - NOTIFICATIONS_API_URL=http://prooflift-api-gateway:8000/notifications
-      - NODE_ENV=development
+      - NODE_ENV=production
     depends_on:
-      - prooflift-api-gateway
+      prooflift-api-gateway:
+        condition: service_healthy
     networks:
       - public
       - private
@@ -41,10 +42,14 @@ services:
     volumes:
       - ./kong.yml:/kong/declarative/kong.yml:ro
     depends_on:
-      - prooflift-auth-be
-      - prooflift-suggest-be
-      - prooflift-posts-be
-      - prooflift-notifications-be
+      prooflift-auth-be:
+        condition: service_started
+      prooflift-suggest-be:
+        condition: service_started
+      prooflift-posts-be:
+        condition: service_started
+      prooflift-notifications-be:
+        condition: service_started
     networks:
       - private
     restart: unless-stopped
@@ -84,7 +89,7 @@ services:
       - PORT=8081
     depends_on:
       prooflift-suggest-db:
-        condition: service_started
+        condition: service_healthy
     networks:
       - private
     restart: unless-stopped
