@@ -22,6 +22,22 @@ services:
       - public
       - private
 
+
+  # === Nginx Reverse Proxy ===
+  prooflift-reverse-proxy:
+    build:
+      context: ./prooflift-reverse_proxy 
+    container_name: prooflift-reverse-proxy
+    ports:
+      - "80:80"        # Puerto público
+    depends_on:
+      - prooflift-api-gateway
+    networks:
+      - public
+      - private
+    restart: unless-stopped
+
+
   # === API Gateway ===
   prooflift-api-gateway:
     image: kong:3.9.1
