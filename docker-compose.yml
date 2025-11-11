@@ -178,7 +178,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - auth_data:/var/lib/postgresql/data
     networks:
       - private
     healthcheck:
@@ -255,7 +255,7 @@ services:
 
 # === Volumes ===
 volumes:
-  postgres_data:
+  auth_data:
   posts_data:
   suggest_data:
   notifications_data:
