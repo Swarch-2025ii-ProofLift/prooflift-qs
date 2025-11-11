@@ -24,13 +24,13 @@ services:
       - private
 
 
-  # === Nginx Reverse Proxy ===
+  # === Reverse Proxy ===
   prooflift-reverse-proxy:
     build:
-      context: ./prooflift-reverse_proxy 
+      context: ./prooflift-reverse-proxy 
     container_name: prooflift-reverse-proxy
     ports:
-      - "80:80"        # Puerto público
+      - "80:80"
     depends_on:
       - prooflift-api-gateway
     networks:

@@ -12,7 +12,8 @@ $Repos = @(
     "https://github.com/Swarch-2025ii-ProofLift/prooflift-posts-be.git|develop",
     "https://github.com/Swarch-2025ii-ProofLift/prooflift-suggest-be.git|development",
     "https://github.com/Swarch-2025ii-ProofLift/prooflift-mobile-fe.git|develop",
-    "https://github.com/Swarch-2025ii-ProofLift/prooflift-notifications-be.git|develop"
+    "https://github.com/Swarch-2025ii-ProofLift/prooflift-notifications-be.git|develop",
+    "https://github.com/Swarch-2025ii-ProofLift/prooflift-reverse-proxy.git|main"
 )
 
 # ----------------------------
