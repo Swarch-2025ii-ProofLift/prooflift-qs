@@ -55,7 +55,7 @@ services:
       - ./kong.yml:/kong/declarative/kong.yml:ro
     deploy:
       mode: replicated
-      replicas: 4
+      replicas: 2
       endpoint_mode: dnsrr
     depends_on:
       prooflift-auth-be:
@@ -114,7 +114,6 @@ services:
     build:
       context: ./prooflift-posts-be
       dockerfile: app/Dockerfile
-    container_name: prooflift-posts-be
     expose:
       - "8082"
     environment:
@@ -130,6 +129,10 @@ services:
       - MQ_PASSWORD=${MQ_PASSWORD:-guest}
       - MQ_QUEUE=notifications_queue
       - PORT=8082
+    deploy:
+      mode: replicated
+      replicas: 3
+      endpoint_mode: dnsrr
     depends_on:
       prooflift-posts-db:
         condition: service_healthy

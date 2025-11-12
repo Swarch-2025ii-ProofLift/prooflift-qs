@@ -47,6 +47,9 @@ services:
     host: prooflift-posts-be
     port: 8082
     protocol: http
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
     routes:
       - name: posts-route
         paths:
