@@ -11,38 +11,35 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - AUTH_API_URL=http://prooflift-api-gateway:8000/auth
-      - GRAPHQL_API_URL=http://prooflift-api-gateway:8000/posts/graphql
-      - EXERCISES_API_URL=http://prooflift-api-gateway:8000/suggest
-      - NOTIFICATIONS_API_URL=http://prooflift-api-gateway:8000/notifications
+      - AUTH_API_URL=http://prooflift-reverse-proxy/api/auth
+      - GRAPHQL_API_URL=http://prooflift-reverse-proxy/api/posts/graphql
+      - EXERCISES_API_URL=http://prooflift-reverse-proxy/api/suggest
+      - NOTIFICATIONS_API_URL=http://prooflift-reverse-proxy/api/notifications
       - NODE_ENV=production
+    depends_on:
+      prooflift-reverse-proxy:
+        condition: service_started
+    networks:
+      - public
+
+  # === Reverse Proxy ===
+  prooflift-reverse-proxy:
+    build:
+      context: ./prooflift-reverse-proxy
+    container_name: prooflift-reverse-proxy
+    ports:
+      - "80:80"
     depends_on:
       prooflift-api-gateway:
         condition: service_healthy
     networks:
       - public
       - private
-
-
-  # === Reverse Proxy ===
-  prooflift-reverse-proxy:
-    build:
-      context: ./prooflift-reverse-proxy 
-    container_name: prooflift-reverse-proxy
-    ports:
-      - "80:80"
-    depends_on:
-      - prooflift-api-gateway
-    networks:
-      - public
-      - private
     restart: unless-stopped
-
 
   # === API Gateway ===
   prooflift-api-gateway:
     image: kong:3.9.1
-    container_name: prooflift-api-gateway
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
@@ -54,9 +51,12 @@ services:
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
     expose:
       - "8000"
-      - "8001"
     volumes:
       - ./kong.yml:/kong/declarative/kong.yml:ro
+    deploy:
+      mode: replicated
+      replicas: 4
+      endpoint_mode: dnsrr
     depends_on:
       prooflift-auth-be:
         condition: service_started
