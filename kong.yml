@@ -75,13 +75,13 @@ services:
         paths:
           - /notifications
           - /notifications/
-        strip_path: true
+        strip_path: false
         preserve_host: false
 
       - name: notifications-catch-all
         paths:
           - /notifications/.*
-        strip_path: true
+        strip_path: false
         preserve_host: false
         regex_priority: 10
 
