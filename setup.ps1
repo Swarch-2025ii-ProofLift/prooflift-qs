@@ -35,7 +35,7 @@ foreach ($repo in $Repos) {
     }
 
     Write-Host "Cleaning $repoName..."
-    Get-ChildItem -Path $repoPath -Recurse -Include ".env*" -File | Remove-Item -Force
+    Get-ChildItem -Path $repoPath -Recurse -Include ".env.example" -File | Remove-Item -Force
     Get-ChildItem -Path $repoPath -Recurse -Include "docker-compose.yml" -File | Remove-Item -Force
 }
 
