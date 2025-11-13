@@ -65,6 +65,13 @@ services:
         preserve_host: false
         regex_priority: 10
 
+      - name: graphql-route
+        paths:
+          - /graphql
+        strip_path: false
+        preserve_host: false
+        regex_priority: 15
+
   # === Notifications Service ===
   - name: notifications-service
     host: prooflift-notifications-be
