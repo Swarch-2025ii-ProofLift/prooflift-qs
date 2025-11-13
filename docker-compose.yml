@@ -10,6 +10,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    volumes:
+      - ./prooflift-fe-ssr/certs:/certs:ro
     environment:
       - AUTH_API_URL=http://prooflift-reverse-proxy/api/auth
       - GRAPHQL_API_URL=http://prooflift-reverse-proxy/api/posts/graphql
@@ -131,7 +133,7 @@ services:
       - PORT=8082
     deploy:
       mode: replicated
-      replicas: 3
+      replicas: 2
       endpoint_mode: dnsrr
     depends_on:
       prooflift-posts-db:
