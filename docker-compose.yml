@@ -9,12 +9,21 @@ services:
     container_name: prooflift-fe
     restart: always
     ports:
-      - "3000:3000"
+      - "3000:3000" #HTTP
+      - "3443:3443" #HTTPS
+    volumes:
+      - ./certs/frontend:/certs/frontend:ro
+    command: >
+      sh -c "npx next start -p 3443
+      --ssl-cert /certs/frontend/frontend.crt
+      --ssl-key /certs/frontend/frontend.key"
+
     environment:
-      - AUTH_API_URL=http://prooflift-api-gateway:8000/auth
-      - GRAPHQL_API_URL=http://prooflift-api-gateway:8000/posts/graphql
-      - EXERCISES_API_URL=http://prooflift-api-gateway:8000/suggest
-      - NOTIFICATIONS_API_URL=http://prooflift-api-gateway:8000/notifications
+      - AUTH_API_URL=https://localhost:8443/auth
+      - API_URL=https://localhost:8443
+      - GRAPHQL_API_URL=https://localhost:8443/posts/graphql
+      - EXERCISES_API_URL=https://localhost:8443/suggest
+      - NOTIFICATIONS_API_URL=https://localhost:8443/notifications
       - NODE_ENV=development
     depends_on:
       - prooflift-api-gateway
@@ -33,26 +42,36 @@ services:
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-      KONG_PROXY_LISTEN: "0.0.0.0:8000"
-    expose:
-      - "8000"
-      - "8001"
+    # Habilita HTTP y HTTPS para el proxy
+      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+    # Habilita HTTP y HTTPS para el admin
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+    # Certificados SSL
+      KONG_SSL_CERT: /etc/kong/certs/kong.crt
+      KONG_SSL_CERT_KEY: /etc/kong/certs/kong.key
+
+    ports:
+      - "8000:8000"   # HTTP
+      - "8443:8443"   # HTTPS
+      - "8001:8001"   # Admin HTTP
+      - "8444:8444"   # Admin HTTPS
     volumes:
       - ./kong.yml:/kong/declarative/kong.yml:ro
+      - ./certs:/etc/kong/certs:ro
     depends_on:
       - prooflift-auth-be
       - prooflift-suggest-be
       - prooflift-posts-be
       - prooflift-notifications-be
     networks:
-      - private
+    - private
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   # === Backend Services ===
   prooflift-auth-be:
@@ -231,6 +250,14 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+  #Contendor para pruebas de seguridad
+  attacker:
+    image: alpine
+    container_name: attacker
+    tty: true
+    networks:
+      - public
+
 
 # === Volumes ===
 volumes:
